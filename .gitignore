@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+.env
+.env.*
+!.env.example
+instance/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+test-results*.txt
+.impeccable/
+.playwright-cli/

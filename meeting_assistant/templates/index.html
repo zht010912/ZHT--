@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="会议纪要与行动项协同助手">
+  <title>ActionFlow · 会议协同工作台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234f46e5'/%3E%3Cpath d='M18 33.5 27 42l19-20' stroke='%23fff' stroke-width='6' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <!-- DIRECTION CONTRACT (seed 6d2fbde8, canon commitment)
+    THESIS: 现代 SaaS 工作台以 Linear/Notion/飞书级工艺执行：浅色精密、图标与动效成体系，
+      拒绝深色侧栏与 unicode 符号拼装的上一代面貌。
+    OWN-WORLD: 纸白底 #f6f7f9、白面 #ffffff、墨色 #171b22、靛蓝 #4f46e5 单一强调色；
+      1.5px 描边圆角 SVG 图标系统；12px 圆角白卡以 1px 细线分界，阴影仅在悬停时浮现。
+    STORY: 评委一眼读到"会议—行动项—AI 待审核"的完整工作流，并感到这是一个被认真设计过的产品。
+    FIRST VIEWPORT: 浅色侧栏（品牌+导航+服务状态）；主区顶部标题与主行动；四张指标卡；
+      下方会议列表与工作详情双栏，AI 建议区以琥珀色标记待审核。
+    FORM: 类别标准（canon），用户于 2026-08-15 明确选定；动效为单次编排的进场与状态过渡。
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+  -->
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6.5 12.5l3.8 3.8 7.2-8.3" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="brand-text"><strong>ActionFlow</strong><span>会议协同工作台</span></div>
+      </div>
+
+      <nav class="nav-stack" aria-label="主导航">
+        <button class="nav-item active" data-view="workspace">
+          <svg class="icon" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.8"/></svg>
+          工作台
+        </button>
+        <button class="nav-item" id="focus-create">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg>
+          新建会议
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="status-pill"><i id="health-dot" aria-hidden="true"></i><span id="health-label">正在检查服务状态</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div class="topbar-title">
+          <h1>让每一次讨论都有结果</h1>
+          <p class="topbar-sub" id="today-line">会议纪要与行动项协同工作台</p>
+        </div>
+        <button class="btn btn-primary" id="new-meeting-button">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg>
+          新建会议
+        </button>
+      </header>
+
+      <section class="metrics" aria-label="核心指标">
+        <article class="metric-card">
+          <div class="metric-icon" data-tone="ink"><svg class="icon" viewBox="0 0 24 24"><path d="M8 3.5h8M8 20.5h8M6.5 3.5h11a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1Z"/><path d="M9.5 8.5h5M9.5 12h5M9.5 15.5h3"/></svg></div>
+          <div><strong id="metric-meetings">—</strong><span>会议总数</span></div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-icon" data-tone="blue"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></div>
+          <div><strong id="metric-pending">—</strong><span>待办行动项</span></div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-icon" data-tone="green"><svg class="icon" viewBox="0 0 24 24"><path d="M4.5 12.5l5 5 10-11"/></svg></div>
+          <div><strong id="metric-rate">—</strong><span>行动项完成率</span></div>
+        </article>
+        <article class="metric-card" data-tone-card="amber">
+          <div class="metric-icon" data-tone="amber"><svg class="icon" viewBox="0 0 24 24"><path d="M12 3.5 4.5 19.5h15L12 3.5Z"/><path d="M12 10v4M12 16.8v.2"/></svg></div>
+          <div><strong id="metric-reviews">—</strong><span>待审核建议</span></div>
+        </article>
+      </section>
+
+      <section class="workspace-grid">
+        <article class="panel meeting-panel">
+          <div class="panel-head">
+            <h2>会议列表</h2>
+            <span class="counter" id="meeting-count">0</span>
+          </div>
+          <div class="filters">
+            <div class="field field-search">
+              <svg class="icon field-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></svg>
+              <input id="filter-q" type="search" placeholder="搜索标题或记录…" aria-label="搜索会议">
+            </div>
+            <div class="field">
+              <svg class="icon field-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c.8-3.4 3.6-5 7-5s6.2 1.6 7 5"/></svg>
+              <input id="filter-owner" type="search" placeholder="负责人" aria-label="按负责人筛选">
+            </div>
+            <div class="field">
+              <select id="filter-type" aria-label="会议类型">
+                <option value="">全部类型</option>
+                <option>项目会议</option><option>评审会</option><option>周例会</option><option>专项会议</option><option>其他</option>
+              </select>
+            </div>
+            <div class="field">
+              <select id="filter-status" aria-label="行动项状态">
+                <option value="">全部状态</option><option value="pending">待办</option><option value="completed">已完成</option>
+              </select>
+            </div>
+          </div>
+          <div id="meeting-list" class="meeting-list" aria-live="polite"></div>
+        </article>
+
+        <article class="panel detail-panel" id="detail-panel">
+          <div id="empty-state" class="empty-state">
+            <div class="empty-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-11Z" stroke="currentColor" stroke-width="1.5"/><path d="M8 9h8M8 12.5h8M8 16h4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <h2>选择一场会议</h2>
+            <p>查看会议记录、行动项与 AI 分析建议。</p>
+          </div>
+
+          <div id="detail-content" class="hidden">
+            <div class="detail-head">
+              <div class="detail-head-text">
+                <p class="detail-meta" id="detail-meta"></p>
+                <h2 id="detail-title"></h2>
+              </div>
+              <button class="btn btn-primary" id="analyze-button">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 4.5 13.8 9l4.7 1.7-4.7 1.8L12 17l-1.8-4.5L5.5 10.7 10.2 9 12 4.5Z"/><path d="M18.5 15.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9.9-2.1Z"/></svg>
+                AI 结构化分析
+              </button>
+            </div>
+            <div class="record-block"><h3>原始会议记录</h3><pre id="detail-record"></pre></div>
+
+            <div class="section-head">
+              <h3>行动项</h3>
+              <button class="btn btn-ghost btn-small" id="add-action-button">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 5.5v13M5.5 12h13"/></svg>
+                新增行动项
+              </button>
+            </div>
+            <div id="action-list" class="action-list"></div>
+
+            <div class="section-head ai-section-head">
+              <h3>AI 建议与审核</h3>
+              <span class="safety-badge">
+                <svg class="icon" viewBox="0 0 24 24"><path d="M12 3.5 5 6v5.5c0 4.2 2.8 7.4 7 8.5 4.2-1.1 7-4.3 7-8.5V6l-7-2.5Z"/><path d="M9 11.8l2.2 2.2 4-4.2"/></svg>
+                人工确认后生效
+              </span>
+            </div>
+            <div id="analysis-list" class="analysis-list"></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="meeting-dialog" class="modal">
+    <form id="meeting-form" method="dialog">
+      <div class="modal-head">
+        <h2>创建会议</h2>
+        <button type="button" class="icon-button" data-close="meeting-dialog" aria-label="关闭">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <label class="form-field">会议标题<input name="title" required maxlength="120" placeholder="例如：支付系统联调评审"></label>
+      <div class="form-row">
+        <label class="form-field">会议类型<select name="meeting_type"><option>项目会议</option><option>评审会</option><option>周例会</option><option>专项会议</option><option>其他</option></select></label>
+        <label class="form-field">会议日期<input name="meeting_date" type="date" required></label>
+      </div>
+      <label class="form-field">会议记录<textarea name="content" rows="10" aria-describedby="record-error char-hint" placeholder="粘贴聊天记录或会议纪要…"></textarea><small id="char-hint" class="char-hint"><span id="char-count">0</span> / {{ "{:,}".format(max_meeting_chars) }}</small><small id="record-error" class="form-error" role="alert"></small></label>
+      <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close="meeting-dialog">取消</button><button class="btn btn-primary" type="submit">保存会议</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="action-dialog" class="modal modal-small">
+    <form id="action-form" method="dialog">
+      <input name="action_id" type="hidden"><input name="expected_version" type="hidden">
+      <div class="modal-head">
+        <h2 id="action-dialog-title">新增行动项</h2>
+        <button type="button" class="icon-button" data-close="action-dialog" aria-label="关闭">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <label class="form-field">任务内容<input name="task" required maxlength="300" placeholder="例如：完成接口联调"></label>
+      <div class="form-row"><label class="form-field">负责人<input name="owner" value="待确认" maxlength="80"></label><label class="form-field">截止日期<input name="due_date" type="date"></label></div>
+      <label class="form-field" id="action-source-field">来源说明<textarea name="source_quote" rows="3" placeholder="可选：对应原文或备注"></textarea></label>
+      <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close="action-dialog">取消</button><button class="btn btn-primary" id="action-submit" type="submit">创建行动项</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="delete-meeting-dialog" class="modal modal-small danger-modal">
+    <form id="delete-meeting-form" method="dialog">
+      <input name="meeting_id" type="hidden">
+      <div class="modal-head">
+        <div class="danger-heading">
+          <span class="danger-icon" aria-hidden="true">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M4.5 7h15M9 7V4.5h6V7m-8 0 1 13h8l1-13M10 10.5v5.5M14 10.5v5.5"/></svg>
+          </span>
+          <div><h2>删除这场会议？</h2><p>此操作无法撤销</p></div>
+        </div>
+        <button type="button" class="icon-button" data-close="delete-meeting-dialog" aria-label="关闭">
+          <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </div>
+      <div class="delete-summary">
+        <strong id="delete-meeting-title"></strong>
+        <p id="delete-meeting-impact"></p>
+      </div>
+      <div class="modal-actions"><button type="button" class="btn btn-ghost" data-close="delete-meeting-dialog">保留会议</button><button class="btn btn-danger" id="delete-meeting-submit" type="submit">确认删除</button></div>
+    </form>
+  </dialog>
+
+  <div id="toast-stack" class="toast-stack" aria-live="assertive"></div>
+  <script>window.APP_CONFIG = { maxMeetingChars: {{ max_meeting_chars }} };</script>
+  <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>
