@@ -59,7 +59,7 @@ flowchart LR
 ### 1. 安装依赖
 
 ```powershell
-Set-Location "D:\Desktop\平台\超聚变\任务\考核\02_源代码\actionflow"
+Set-Location "D:\Desktop\平台\超聚变\任务\actionflow"
 .\setup.ps1
 ```
 
@@ -93,20 +93,20 @@ $env:DEEPSEEK_TIMEOUT_SECONDS = "45"
 .\run.ps1
 ```
 
-默认使用 `8766`，浏览器访问 <http://127.0.0.1:8766>。指定其他端口：
+默认使用 `8767`，浏览器访问 <http://127.0.0.1:8767>。指定其他端口：
 
 ```powershell
-.\run.ps1 -Port 8767
+.\run.ps1 -Port 8768
 ```
 
 如果暂时不配置 Key，页面仍可正常使用会议和手工行动项功能，AI 调用会返回明确的“未配置”失败记录。
 
-若访问 `127.0.0.1:8000` 看到 `ROUTE_NOT_FOUND`，说明 8000 端口是另一项服务，不是 ActionFlow。请保持运行 `run.ps1` 的终端打开，并改访问脚本打印的 `http://127.0.0.1:8766`。若 8766 也被占用，脚本会明确提示，可执行 `run.ps1 -Port 8767` 并访问 8767。
+若访问 `127.0.0.1:8000` 看到 `ROUTE_NOT_FOUND`，说明 8000 端口是另一项服务，不是 ActionFlow。请保持运行 `run.ps1` 的终端打开，并改访问脚本打印的 `http://127.0.0.1:8767`。若 8767 也被占用，脚本会明确提示，可执行 `run.ps1 -Port 8768` 并访问 8768。
 
 启动后可先核验健康接口：
 
 ```powershell
-Invoke-RestMethod http://127.0.0.1:8766/api/health
+Invoke-RestMethod http://127.0.0.1:8767/api/health
 ```
 
 ## 一键测试

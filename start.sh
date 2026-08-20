@@ -15,7 +15,7 @@ if [ -f .env ]; then
   source .env; set +a
 fi
 
-export APP_PORT="${APP_PORT:-8766}"
+export APP_PORT="${APP_PORT:-8767}"
 echo ""
 echo "  ActionFlow 会议协同工作台"
 echo "  ----------------------------------------"

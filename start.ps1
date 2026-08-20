@@ -19,13 +19,13 @@ if (Test-Path ".env") {
     }
 }
 
-$port = 8766
+$port = 8767
 Write-Host ""
 Write-Host "  ActionFlow 会议协同工作台"
 Write-Host "  ----------------------------------------"
 Write-Host "  地址:  http://127.0.0.1:$port"
 Write-Host "  停止:  Ctrl + C"
 Write-Host ""
-Start-Job { Start-Sleep -Seconds 2; Start-Process "http://127.0.0.1:8766" } | Out-Null
+Start-Job { Start-Sleep -Seconds 2; Start-Process "http://127.0.0.1:8767" } | Out-Null
 $env:APP_PORT = "$port"
 .\.venv\Scripts\python.exe app.py

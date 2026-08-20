@@ -1,6 +1,6 @@
 param(
     [ValidateRange(1, 65535)]
-    [int]$Port = 8766
+    [int]$Port = 8767
 )
 
 $ErrorActionPreference = "Stop"
@@ -17,7 +17,7 @@ if (-not $env:DEEPSEEK_API_KEY) {
 if (Get-Command Get-NetTCPConnection -ErrorAction SilentlyContinue) {
     $Listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
     if ($Listener) {
-        Write-Error "端口 $Port 已被占用。请关闭占用进程，或改用 .\run.ps1 -Port 8767，并访问对应端口。"
+        Write-Error "端口 $Port 已被占用。请关闭占用进程，或改用 .\run.ps1 -Port 8768，并访问对应端口。"
         exit 1
     }
 }
