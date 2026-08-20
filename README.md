@@ -35,7 +35,7 @@ flowchart LR
 
 ## Windows 安装版
 
-不想配置 Python 环境时，可下载 [`release/ActionFlow_Setup_v1.0.0.exe`](release/ActionFlow_Setup_v1.0.0.exe) 安装。安装后从开始菜单或桌面快捷方式启动，应用会自动打开白紫工作台；优先使用 `http://127.0.0.1:8767`，端口被占用时会自动选择下一个可用端口。
+不想配置 Python 环境时，可从 [GitHub Releases](https://github.com/zht010912/ZHT--/releases/latest) 下载 `ActionFlow_Setup_v1.0.0.exe` 安装。安装后从开始菜单或桌面快捷方式启动，应用会自动打开白紫工作台；优先使用 `http://127.0.0.1:8767`，端口被占用时会自动选择下一个可用端口。
 
 - 安装包不包含 API Key，也不会把 Key 写入安装目录或 GitHub。
 - 首次启动会在 `%LOCALAPPDATA%\ActionFlow\settings.env` 创建本机配置模板；需要 AI 分析时，仅在该文件填写 `DEEPSEEK_API_KEY=你的密钥` 后重新启动。
@@ -72,12 +72,19 @@ flowchart LR
 └─ docs/                          # 设计、风险、API、测试和演示材料
 ```
 
-## 从零启动（Windows PowerShell）
+## 从源码启动（Windows PowerShell）
 
-### 1. 安装依赖
+### 1. 获取源码并安装依赖
 
 ```powershell
-Set-Location "D:\Desktop\平台\超聚变\任务\actionflow"
+git clone https://github.com/zht010912/ZHT--.git
+Set-Location .\ZHT--
+.\setup.ps1
+```
+
+也可以在 GitHub 点击 **Code → Download ZIP**。解压后，在项目文件夹空白处右键选择“在终端中打开”，再执行：
+
+```powershell
 .\setup.ps1
 ```
 
@@ -93,15 +100,10 @@ python -m venv .venv
 只在当前 PowerShell 窗口中设置，不写入文件：
 
 ```powershell
-$env:DEEPSEEK_API_KEY = "在这里粘贴演示专用Key"
+$env:DEEPSEEK_API_KEY = "你的_API_Key"
 ```
 
-项目默认使用当前官方模型名 `deepseek-v4-flash` 和 `https://api.deepseek.com/chat/completions`。如需调整：
-
-```powershell
-$env:DEEPSEEK_MODEL = "deepseek-v4-flash"
-$env:DEEPSEEK_TIMEOUT_SECONDS = "45"
-```
+常规使用只需配置这一项；连接参数已由应用内置。如需本地开发调试，请参考 [`.env.example`](.env.example)，不要将真实 Key 提交到仓库。
 
 不要把真实 Key 写入 `.env`、截图、README、测试或提交包；`.gitignore` 已排除 `.env`。
 
