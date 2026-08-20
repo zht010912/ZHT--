@@ -11,5 +11,3 @@ instance/
 *.sqlite
 *.sqlite3
 test-results*.txt
-.impeccable/
-.playwright-cli/

@@ -143,36 +143,6 @@ def test_meeting_crud_filters_and_persistence(tmp_path) -> None:
         second.list_meetings({"due_before": "下周五"})
 
 
-def test_delete_meeting_cascades_actions_and_analysis_runs(database: Database) -> None:
-    meeting = create_meeting(database, "待删除会议")
-    database.create_action(meeting["id"], {"task": "待删除任务"})
-    database.create_analysis_run(meeting["id"], "deepseek-chat", "optimized")
-
-    deleted = database.delete_meeting(meeting["id"])
-
-    assert deleted == {"id": meeting["id"], "title": "待删除会议"}
-    assert database.get_meeting(meeting["id"]) is None
-    with sqlite3.connect(database.path) as connection:
-        assert connection.execute("SELECT COUNT(*) FROM actions").fetchone()[0] == 0
-        assert connection.execute("SELECT COUNT(*) FROM analysis_runs").fetchone()[0] == 0
-    with pytest.raises(NotFoundError):
-        database.delete_meeting(meeting["id"])
-
-
-def test_deleted_demo_meeting_does_not_return_after_restart(tmp_path) -> None:
-    path = tmp_path / "seed-persistence.sqlite3"
-    first = Database(path)
-    first.initialize(seed_demo=True)
-    deleted_id = first.list_meetings()[0]["id"]
-    first.delete_meeting(deleted_id)
-
-    reopened = Database(path)
-    reopened.initialize(seed_demo=True)
-
-    assert len(reopened.list_meetings()) == 2
-    assert reopened.get_meeting(deleted_id) is None
-
-
 def test_action_fingerprint_deduplicates_and_optimistic_lock_rejects_stale_write(
     database: Database,
 ) -> None:

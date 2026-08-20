@@ -139,7 +139,7 @@ class DeepSeekAnalyzer:
         if not self.settings.deepseek_api_key:
             raise AIServiceError(
                 "AI_NOT_CONFIGURED",
-                "AI 服务尚未配置，请联系管理员完成配置后重试。",
+                "AI 服务尚未配置，请设置 DEEPSEEK_API_KEY。",
                 status_code=503,
             )
 
@@ -161,13 +161,13 @@ class DeepSeekAnalyzer:
         except json.JSONDecodeError:
             raise AIServiceError(
                 "AI_INVALID_JSON",
-                "AI 服务返回了无法识别的结果，请重试。",
+                "AI 服务返回了无效的 JSON，请重试。",
             ) from None
 
         if not isinstance(model_proposal, Mapping):
             raise AIServiceError(
                 "AI_INVALID_RESPONSE",
-                "AI 服务返回了无法识别的结果，请重试。",
+                "AI 服务返回的数据结构无效，请重试。",
             )
         try:
             proposal, warnings, security_flags = postprocess_proposal(
@@ -280,7 +280,7 @@ def _response_content(response: httpx.Response) -> str:
     except (KeyError, IndexError, TypeError):
         raise AIServiceError(
             "AI_INVALID_RESPONSE",
-            "AI 服务返回了无法识别的结果，请重试。",
+            "AI 服务返回的数据结构无效，请重试。",
         ) from None
     if content is None or not isinstance(content, str) or not content.strip():
         raise AIServiceError(

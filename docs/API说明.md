@@ -33,13 +33,7 @@
 
 `GET /api/meetings/{id}` 返回会议、正式 `actions` 和 `analysis_runs` 审计记录。
 
-## 3. 删除会议
-
-`DELETE /api/meetings/{id}`
-
-删除前由页面展示会议名称和关联行动项数量并要求二次确认。删除在单个数据库事务中执行，关联行动项和 AI 分析记录通过外键级联清理；样例会议删除后重启也不会重新生成。成功返回被删除会议的 `id` 与 `title`，不存在返回 HTTP 404。
-
-## 4. 手工新增行动项
+## 3. 手工新增行动项
 
 `POST /api/meetings/{id}/actions`
 
@@ -55,7 +49,7 @@
 
 同一会议中任务、负责人和截止日期相同的重复提交不会重复创建，响应的 `created` 为 `false`。
 
-## 5. 更新行动项
+## 4. 更新行动项
 
 `PATCH /api/actions/{id}`
 
@@ -71,7 +65,7 @@
 
 除 `expected_version` 必填外，其余字段按需更新。页面“编辑”可修改任务、负责人和日期，勾选框更新状态；版本过期返回 HTTP 409，防止并发修改被静默覆盖。
 
-## 6. 运行 AI 分析
+## 5. 运行 AI 分析
 
 `POST /api/meetings/{id}/analyze`
 
@@ -98,7 +92,7 @@
 }
 ```
 
-## 7. 人工审核
+## 6. 人工审核
 
 `POST /api/analysis-runs/{id}/review`
 
@@ -122,7 +116,7 @@
 
 仅 `confirm`/`edit` 会事务性创建正式行动项；同一个分析运行不能重复审核。
 
-## 8. 健康检查
+## 7. 健康检查
 
 `GET /api/health`
 

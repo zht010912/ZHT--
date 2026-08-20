@@ -34,11 +34,6 @@ class ValidationError(Exception):
 
 
 _SCHEMA = """
-CREATE TABLE IF NOT EXISTS app_metadata (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS meetings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
@@ -101,37 +96,6 @@ CREATE INDEX IF NOT EXISTS idx_analysis_runs_meeting ON analysis_runs(meeting_id
 """
 
 
-_DEMO_ANALYSIS = {
-    "meeting_seed_key": "demo-product-review",
-    "model": "deepseek-v4-flash",
-    "prompt_version": "optimized",
-    "proposal": {
-        "summary": "会议决定采用方案 B 推进产品发布，明确接口联调与发布检查单两项任务的负责人和期限。",
-        "decisions": [
-            {"decision": "产品发布采用方案 B", "source_quote": "会议决定采用方案 B。"}
-        ],
-        "action_items": [
-            {
-                "task": "完成接口联调",
-                "owner": "王芳",
-                "due_date_text": "8 月 15 日前",
-                "due_date": "2026-08-15",
-                "source_quotes": ["王芳负责接口联调，8 月 15 日前完成"],
-                "confidence": 0.93,
-            },
-            {
-                "task": "整理发布检查单",
-                "owner": "陈浩",
-                "due_date_text": "8 月 16 日前",
-                "due_date": "2026-08-16",
-                "source_quotes": ["陈浩负责整理发布检查单，8 月 16 日前完成"],
-                "confidence": 0.91,
-            },
-        ],
-    },
-}
-
-
 _DEMO_MEETINGS = (
     {
         "seed_key": "demo-product-review",
@@ -151,7 +115,7 @@ _DEMO_MEETINGS = (
     {
         "seed_key": "demo-api-sync",
         "title": "接口联调周会",
-        "meeting_type": "周例会",
+        "meeting_type": "项目例会",
         "meeting_date": "2026-08-12",
         "content": (
             "联调环境已经恢复。赵磊周五前补齐超时重试测试，孙悦更新接口文档；"
@@ -254,14 +218,8 @@ class Database:
             Path(self.path).expanduser().resolve().parent.mkdir(parents=True, exist_ok=True)
         with self._connection(write=True) as connection:
             connection.executescript(_SCHEMA)
-            demo_seeded = connection.execute(
-                "SELECT 1 FROM app_metadata WHERE key = 'demo_seeded'"
-            ).fetchone()
-            if seed_demo and demo_seeded is None:
+            if seed_demo:
                 self._seed_demo(connection)
-                connection.execute(
-                    "INSERT INTO app_metadata (key, value) VALUES ('demo_seeded', '1')"
-                )
 
     def _seed_demo(self, connection: sqlite3.Connection) -> None:
         for meeting in _DEMO_MEETINGS:
@@ -296,39 +254,6 @@ class Database:
                         "analysis_run_id": None,
                     },
                 )
-        self._seed_pending_review(connection)
-
-    def _seed_pending_review(self, connection: sqlite3.Connection) -> None:
-        """预置一条已成功、待人工审核的 AI 建议，供演示完整确认闭环。"""
-
-        row = connection.execute(
-            "SELECT id FROM meetings WHERE seed_key = ?",
-            (_DEMO_ANALYSIS["meeting_seed_key"],),
-        ).fetchone()
-        if row is None:
-            return
-        existing = connection.execute(
-            "SELECT COUNT(*) FROM analysis_runs WHERE meeting_id = ?", (row["id"],)
-        ).fetchone()
-        if existing[0] > 0:
-            return
-        proposal_json = _json_dump(_DEMO_ANALYSIS["proposal"])
-        connection.execute(
-            """
-            INSERT INTO analysis_runs (
-                meeting_id, model, prompt_version, status, raw_response,
-                proposed_json, warnings_json, security_flags_json, completed_at
-            ) VALUES (?, ?, ?, 'succeeded', ?, ?, '[]', '[]',
-                      strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-            """,
-            (
-                row["id"],
-                _DEMO_ANALYSIS["model"],
-                _DEMO_ANALYSIS["prompt_version"],
-                proposal_json,
-                proposal_json,
-            ),
-        )
 
     def create_meeting(self, data: dict) -> dict:
         values = _validated(MeetingCreate, data)
@@ -423,12 +348,6 @@ class Database:
             result["actions"] = [self._action_dict(action) for action in action_rows]
             result["analysis_runs"] = [self._analysis_run_dict(run) for run in run_rows]
             return result
-
-    def delete_meeting(self, meeting_id: int) -> dict:
-        with self._connection(write=True) as connection:
-            meeting = self._require_meeting(connection, meeting_id)
-            connection.execute("DELETE FROM meetings WHERE id = ?", (meeting_id,))
-            return {"id": meeting_id, "title": meeting["title"]}
 
     def create_action(self, meeting_id: int, data: dict) -> tuple[dict, bool]:
         values = _validated(ActionCreate, data)
