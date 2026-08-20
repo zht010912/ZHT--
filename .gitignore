@@ -13,3 +13,6 @@ instance/
 test-results*.txt
 .impeccable/
 .playwright-cli/
+build/
+dist/
+*.spec

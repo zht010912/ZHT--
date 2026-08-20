@@ -33,6 +33,20 @@ flowchart LR
 
 技术栈：Python 3.11+、Flask、SQLite、Pydantic v2、httpx、pytest。没有 Node.js、Redis 或前端构建步骤。
 
+## Windows 安装版
+
+不想配置 Python 环境时，可下载 [`release/ActionFlow_Setup_v1.0.0.exe`](release/ActionFlow_Setup_v1.0.0.exe) 安装。安装后从开始菜单或桌面快捷方式启动，应用会自动打开白紫工作台；优先使用 `http://127.0.0.1:8767`，端口被占用时会自动选择下一个可用端口。
+
+- 安装包不包含 API Key，也不会把 Key 写入安装目录或 GitHub。
+- 首次启动会在 `%LOCALAPPDATA%\ActionFlow\settings.env` 创建本机配置模板；需要 AI 分析时，仅在该文件填写 `DEEPSEEK_API_KEY=你的密钥` 后重新启动。
+- 会议数据保存到 `%LOCALAPPDATA%\ActionFlow\meeting_assistant.db`，卸载程序不会主动删除，避免误删数据。
+
+从源码重新构建安装包：
+
+```powershell
+.\build_installer.ps1 -Version 1.0.0
+```
+
 ## 目录
 
 ```text
@@ -51,6 +65,10 @@ flowchart LR
 ├─ evaluation/results.json        # 同集真实模型逐例结果
 ├─ scripts/run_evaluation.py      # 真实 baseline/optimized 对比
 ├─ scripts/verify_submission.py   # 提交前完整性与密钥扫描
+├─ desktop_launcher.py             # 安装版桌面启动器
+├─ build_installer.ps1             # Windows 安装包构建入口
+├─ installer/ActionFlow.iss        # Inno Setup 安装器脚本
+├─ release/                        # 可下载 Windows 安装包与说明
 └─ docs/                          # 设计、风险、API、测试和演示材料
 ```
 
