@@ -77,16 +77,12 @@ def _create_demo_meeting(client):
 def test_index_and_health_never_expose_secret(client):
     index = client.get("/")
     assert index.status_code == 200
-    index_html = index.get_data(as_text=True)
-    assert "ActionFlow" in index_html
-    assert "test-only-key" not in index_html
-    assert "deepseek-v4-flash" not in index_html
-    assert "当前模型" not in index_html
+    assert "ActionFlow" in index.get_data(as_text=True)
+    assert "test-only-key" not in index.get_data(as_text=True)
 
     health = client.get("/api/health")
     assert health.status_code == 200
     assert health.get_json()["api_key_configured"] is True
-    assert "model" not in health.get_json()
     assert "test-only-key" not in health.get_data(as_text=True)
 
 
@@ -106,6 +102,25 @@ def test_create_search_and_filter_meetings(client):
     by_type = client.get("/api/meetings?meeting_type=评审会").get_json()["items"]
     assert [item["id"] for item in by_query] == [created["id"]]
     assert created["id"] in {item["id"] for item in by_type}
+
+
+def test_delete_meeting_removes_its_related_data(client):
+    meeting = _create_demo_meeting(client)
+    action = client.post(
+        f"/api/meetings/{meeting['id']}/actions",
+        json={"task": "随会议删除", "owner": "王芳", "due_date": "2026-08-20"},
+    )
+    assert action.status_code == 201
+
+    deleted = client.delete(f"/api/meetings/{meeting['id']}")
+
+    assert deleted.status_code == 200
+    assert deleted.get_json() == {"id": meeting["id"], "title": "接口联调验收"}
+    assert client.get(f"/api/meetings/{meeting['id']}").status_code == 404
+    dashboard = client.get("/api/dashboard").get_json()
+    assert dashboard["meetings"] == 3
+    assert dashboard["actions"] == 8
+    assert client.delete(f"/api/meetings/{meeting['id']}").status_code == 404
 
 
 @pytest.mark.parametrize(

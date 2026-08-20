@@ -59,6 +59,7 @@ def create_app(
         return jsonify({
             "status": "ok",
             "database": "ok",
+            "model": settings.deepseek_model,
             "api_key_configured": bool(settings.deepseek_api_key),
         })
 
@@ -86,6 +87,10 @@ def create_app(
         if meeting is None:
             raise NotFoundError("会议不存在")
         return jsonify(meeting)
+
+    @app.delete("/api/meetings/<int:meeting_id>")
+    def delete_meeting(meeting_id: int):
+        return jsonify(database.delete_meeting(meeting_id))
 
     @app.post("/api/meetings/<int:meeting_id>/actions")
     def create_action(meeting_id: int):

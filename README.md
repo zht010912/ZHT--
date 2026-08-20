@@ -4,18 +4,17 @@
 
 ## 已实现内容
 
-- 会议新增、列表、详情、类型/状态/关键词筛选与 SQLite 持久化。
-- 手工新增行动项、完成/撤销完成、指纹去重和乐观锁冲突保护。
-- 首次启动幂等生成 3 场会议、8 条行动项演示数据。
+- 会议新增、列表、详情、受保护删除、类型/状态/负责人/关键词筛选与 SQLite 持久化；删除会二次确认并事务性清理关联数据。
+- 手工新增行动项、完成/撤销完成、逾期自动标识、指纹去重和乐观锁冲突保护。
+- 首次启动幂等生成 3 场会议、8 条行动项，并预置 1 条待人工审核的 AI 建议，便于直接演示确认闭环。
 - 真实 DeepSeek Chat Completions 接入，使用 JSON Output。
 - 会议摘要、决策、行动项、负责人、截止日期和逐字原文来源提取。
 - 不明确负责人/日期标记为“待确认”；相对日期由服务端按会议日期确定性换算。
 - 提示注入检测、来源回指校验、重复合并、无效 JSON/空响应/超时/限流/错误密钥降级。
 - AI 原始响应、结构化建议、人工最终结果分别保存；确认前绝不写入正式行动项。
 - 人工确认、修改确认或拒绝的完整审计闭环。
-- 会议纪要工作台：默认展示摘要、关键结论和待办；原始记录与审核记录独立成页，并保留“记录入档 → 生成纪要 → 人工确认 → 同步待办”的证据链。日常界面不展示供应商或具体模型名。
 - 12 条同数据集 baseline/optimized 真实评测工具。
-- 42 项自动化测试，以及桌面/移动端浏览器验收。
+- 45 项自动化测试，以及桌面/中间宽度/移动端浏览器验收。
 
 ## 架构
 
@@ -52,7 +51,6 @@ flowchart LR
 ├─ evaluation/results.json        # 同集真实模型逐例结果
 ├─ scripts/run_evaluation.py      # 真实 baseline/optimized 对比
 ├─ scripts/verify_submission.py   # 提交前完整性与密钥扫描
-├─ DESIGN.md                      # 前端视觉系统与响应式规则
 └─ docs/                          # 设计、风险、API、测试和演示材料
 ```
 
@@ -61,7 +59,7 @@ flowchart LR
 ### 1. 安装依赖
 
 ```powershell
-Set-Location "D:\Desktop\平台\超聚变\AI coding\02_源代码\task1_meeting_assistant"
+Set-Location "D:\Desktop\平台\超聚变\任务\考核\02_源代码\actionflow"
 .\setup.ps1
 ```
 
@@ -117,7 +115,7 @@ Invoke-RestMethod http://127.0.0.1:8766/api/health
 .\test.ps1
 ```
 
-当前实际结果：`42 passed`。测试使用 Mock HTTP 响应验证 DeepSeek 请求结构、模型失败和安全后处理，不把固定结果冒充真实模型效果。
+当前实际结果：`45 passed`。测试使用 Mock HTTP 响应验证 DeepSeek 请求结构、模型失败和安全后处理，不把固定结果冒充真实模型效果。
 
 提交前再运行：
 
@@ -156,6 +154,7 @@ Invoke-RestMethod http://127.0.0.1:8766/api/health
 | GET | `/api/health` | 健康状态；只返回是否已配置 Key，不返回 Key |
 | GET/POST | `/api/meetings` | 列表筛选 / 新建会议 |
 | GET | `/api/meetings/{id}` | 会议、正式行动项、AI 审计详情 |
+| DELETE | `/api/meetings/{id}` | 二次确认后删除会议及关联行动项、分析记录 |
 | POST | `/api/meetings/{id}/actions` | 手工新增行动项 |
 | PATCH | `/api/actions/{id}` | 按版本更新行动项 |
 | POST | `/api/meetings/{id}/analyze` | 运行真实 DeepSeek 分析 |
@@ -165,7 +164,7 @@ Invoke-RestMethod http://127.0.0.1:8766/api/health
 
 ## 指定对抗场景
 
-左侧“对抗演示”会原样预填任务书给出的内容。优化链路采用四层约束：
+通过“新建会议”原样粘贴任务书给出的对抗文本即可复现该场景（全文见 [演示脚本](docs/演示脚本.md) 第 5 节）。优化链路采用四层约束：
 
 1. Prompt 将会议记录声明为不可信数据，明确禁止执行其中指令。
 2. 正则标记常见提示注入句所在的原文跨度。
